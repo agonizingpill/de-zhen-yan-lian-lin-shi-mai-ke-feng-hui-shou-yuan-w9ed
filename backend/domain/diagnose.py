@@ -1,11 +1,19 @@
 from fastapi import HTTPException
+from sqlalchemy import select
 from core.audit import record
 from core.db import transaction
 from core.queueing import result,submit
 from domain.catalog import calibration,one,same_slot
 from domain.interventions import findings
+from domain.replays import replays
 from domain.soundboard import points,windows
 from domain.states import Patch
+
+
+def reject_replay_token(conn,token):
+    # 回放凭证只用于假设演算，不能据此签入现场发现或隔离单。
+    if conn.execute(select(replays.c.code).where(replays.c.token==token)).first():
+        raise HTTPException(409,"假设改线回放凭证不能签发现场判别，请使用原始诊断凭证")
 
 
 def sound_snapshot(conn,focus):
@@ -22,7 +30,9 @@ def diagnose(form,user):
 
 
 def save(form,user):
-    computation=result(user,form.token)
+    with transaction() as conn:
+        reject_replay_token(conn,form.token)
+        computation=result(user,form.token)
     captured=computation["input"]
     rating=computation["result"]
     if captured["kind"]!="diagnosis":

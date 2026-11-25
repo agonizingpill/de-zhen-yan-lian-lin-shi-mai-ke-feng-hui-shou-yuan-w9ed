@@ -48,6 +48,17 @@ docker compose exec -T backend python -m scripts.seed_demo
 
 `backend/domain/learning.py` 从固定种子 217 的 32 个正常基线窗拟合 RobustScaler，再用 8 邻居的 novelty LOF 评估四项特征。读数为峰值频率占比、持续回响指数、整体声级、自身回路关联，范围均为 0 到 1。LOF 分数小于 −1.55 时尝试寻找同总线同刻度的相邻频率峰。在主峰偏差 25 Hz 内、峰占比至少 0.62 且回响至少 0.52 的麦位达到三个，即标记协作频带并保留。复线签发另外要求回响指数不高于 0.36。模型与阈值用于模拟声检样例。
 
-`soundboard.py` 与 `interventions.py` 定义领域表。`soundcheck.py` 记录声检和配线版本，`diagnose.py` 固定快照并检查迟到的同频证据，`channel.py` 保护共享路、隔离独立点并复位。前端位于 `frontend/src/pages/`。状态枚举在 `backend/domain/states.py` 与 `frontend/src/audio-state.js`，权限枚举在 `backend/core/roles.py`、`frontend/src/store.js`，使用于数据库约束、强制业务路径和显示。
+### 假设改线回放
+
+`backend/domain/replay.py` 与 `backend/domain/replays.py` 支持“要是早点挪线”的假设演算。在诊断页选一段主路声检窗、一个改线刻度和目标线路，系统在单事务内冻结开回放当刻已入账的基线、同刻度现场窗和当时配线，从该刻度起把被选麦位假设挪到目标线路，其余麦位保持原走线，再用同一套 LOF 与同频规则给出原走线和假设线路两份判别对照。
+
+回放与现场操作严格隔离：
+
+- 开回放与补录声检并发时，整段只取开回放时已入账的读数，补录的同刻度窗口不进入快照。
+- 回放重跑不新增记录，始终读取保存时的读数、基线和走线重新判别。
+- 回放凭证不能签发现场发现、隔离或复位；`diagnose.save` 与 `channel.restore` 会以 409 拒绝，`microphone_points` 的实际配线不变。
+- 回放仅针对 `live` 窗口，复线试音不参与假设改线；目标线路须与当前走线不同，改线刻度不能晚于所选声检窗刻度。
+
+`soundboard.py` 与 `interventions.py` 定义领域表。`soundcheck.py` 记录声检和配线版本，`diagnose.py` 固定快照并检查迟到的同频证据，`channel.py` 保护共享路、隔离独立点并复位。前端位于 `frontend/src/pages/`（回放页为 `replay.js`）。状态枚举在 `backend/domain/states.py` 与 `frontend/src/audio-state.js`，权限枚举在 `backend/core/roles.py`、`frontend/src/store.js`，使用于数据库约束、强制业务路径和显示。
 
 源码以 MIT 许可提供，见 `LICENSE`。

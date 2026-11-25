@@ -6,4 +6,7 @@ export const mixer = {
   save:body=>request('/feedback/save',body), findings:()=>request('/feedback'),
   isolate:body=>request('/patch/isolate',body), probe:(code,body)=>request('/patch/'+code+'/probe',body),
   restore:(code,body)=>request('/patch/'+code+'/restore',body),
+  replays:()=>request('/feedback/replay'),
+  replay:body=>request('/feedback/replay',body),
+  rerun:code=>request('/feedback/replay/'+code+'/rerun',body),
 };

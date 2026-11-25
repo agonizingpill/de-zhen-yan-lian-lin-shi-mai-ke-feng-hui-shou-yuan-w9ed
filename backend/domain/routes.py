@@ -1,8 +1,8 @@
 from fastapi import APIRouter,Depends
 from core.auth import actor,allow
 from core.roles import REVIEW,WRITE
-from domain import catalog,channel,diagnose,soundcheck
-from domain.forms import Capture,Diagnose,Isolate,RelineProbe,Restore,SaveFinding
+from domain import catalog,channel,diagnose,replay,soundcheck
+from domain.forms import Capture,Diagnose,Isolate,RelineProbe,ReplayReline,Restore,SaveFinding
 
 patch=APIRouter(prefix="/patch")
 audio=APIRouter(prefix="/audio")
@@ -41,6 +41,23 @@ def probe(form:Diagnose,user=Depends(actor)):
 def save(form:SaveFinding,user=Depends(actor)):
     allow(user,WRITE)
     return diagnose.save(form,user)
+
+
+@feedback.get("/replay")
+def replay_list(user=Depends(actor)):
+    return replay.listing()
+
+
+@feedback.post("/replay",status_code=201)
+def replay_create(form:ReplayReline,user=Depends(actor)):
+    allow(user,WRITE)
+    return replay.create(form,user)
+
+
+@feedback.post("/replay/{code}/rerun")
+def replay_rerun(code:str,user=Depends(actor)):
+    allow(user,WRITE)
+    return replay.rerun(code,user)
 
 
 @patch.post("/isolate",status_code=201)

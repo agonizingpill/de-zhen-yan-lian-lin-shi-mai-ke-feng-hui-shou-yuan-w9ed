@@ -42,3 +42,10 @@ class RelineProbe(Input):
 
 class Restore(Input):
     token: Token
+
+
+class ReplayReline(Input):
+    code: Code
+    window: Code
+    reline_slot: Annotated[int,Field(ge=1,le=46000)]
+    target_channel: Literal["BUS-A","BUS-B","BUS-C"]

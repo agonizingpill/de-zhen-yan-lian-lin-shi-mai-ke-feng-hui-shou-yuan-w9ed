@@ -27,5 +27,7 @@ details summary { cursor:pointer; }
 .note { border-left:3px solid var(--accent); margin:10px 0; padding:9px; background:var(--tint); }
 .welcome .title { border:1px solid var(--line); border-bottom:4px solid var(--accent); background:var(--sheet); padding:1.5rem; display:grid; align-content:center; min-height:185px; }
 .live-review { animation:entry .28s both; }
+.replay-compare { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:8px 0; }
+.replay-compare > .mono,.replay-compare > p:last-child { grid-column:1 / -1; }
 @media(max-width:1000px) { .mix,.mix.invert { grid-template-columns:1fr; } }
 @media(max-width:720px) { .shell { display:block } }

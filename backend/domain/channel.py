@@ -6,6 +6,7 @@ from core.queueing import result,submit
 from domain.catalog import calibration,latest,one,same_slot
 from domain.interventions import findings,tickets
 from domain.learning import relative_to
+from domain.replays import replays
 from domain.soundboard import points,windows
 from domain.states import Finding,Patch,Ticket
 from sqlalchemy import Column,Integer,Table
@@ -15,6 +16,12 @@ patch_mutex=Table("patch_serial",metadata,Column("code",Integer,primary_key=True
 
 def lock_patch(conn):
     conn.execute(select(patch_mutex).with_for_update()).first()
+
+
+def reject_replay_token(conn,token):
+    # 回放不改实际配线，其凭证不得驱动任何现场隔离/复位。
+    if conn.execute(select(replays.c.code).where(replays.c.token==token)).first():
+        raise HTTPException(409,"假设改线回放凭证不能签现场隔离或复位，实际配线照旧")
 
 
 def isolate(form,user):
@@ -64,6 +71,8 @@ def probe(code,form,user):
 
 
 def restore(code,form,user):
+    with transaction() as conn:
+        reject_replay_token(conn,form.token)
     data=result(user,form.token)
     payload,rating=data["input"],data["result"]
     if payload["kind"]!="reline" or payload["ticket"]!=code:
